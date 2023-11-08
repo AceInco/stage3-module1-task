@@ -1,17 +1,34 @@
 package com.mjc.school.controller;
 
-import com.mjc.school.service.NewsDtoResponse;
+import com.mjc.school.service.dto.NewsDTO;
+import com.mjc.school.service.impl.NewsServiceImpl;
 
 import java.util.List;
 
-public interface NewsController {
-    List<NewsDtoResponse> getAllNews();
+public class NewsController {
+    private NewsServiceImpl newsService;
 
-    NewsDtoResponse getNewsById(Long id);
 
-    NewsDtoResponse createNews(NewsDtoResponse newsDtoResponse);
+    public void getAllNews() {
+        List<NewsDTO> newsDTOList = newsService.readAll();
+        for (NewsDTO news : newsDTOList) {
+            System.out.println(news);
+        }
+    }
 
-    NewsDtoResponse updateNews(Long id, NewsDtoResponse newsDtoResponse);
+    public void getNewsById(Long id) {
+        System.out.println(newsService.readById(id));
+    }
 
-    boolean deleteNews(Long id);
+    public void updateNewsById(NewsDTO newsDTO) {
+        System.out.println(newsService.update(newsDTO));
+    }
+
+    public void create(NewsDTO newsDTO) {
+        System.out.println(newsService.create(newsDTO));
+    }
+
+    public void deleteNewsById(Long id) {
+        System.out.println(newsService.delete(id));
+    }
 }
