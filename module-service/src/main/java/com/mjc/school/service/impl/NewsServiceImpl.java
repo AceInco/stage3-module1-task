@@ -2,7 +2,7 @@ package com.mjc.school.service.impl;
 
 import com.mjc.school.repository.exceptions.NewsNotFoundException;
 import com.mjc.school.repository.implementation.NewsModel;
-import com.mjc.school.repository.implementation.NewsRepositoryImpl;
+import com.mjc.school.repository.implementation.NewsRepositoryImplDataSource;
 import com.mjc.school.service.Service;
 import com.mjc.school.service.dto.NewsDTO;
 import com.mjc.school.service.mapper.NewsMapper;
@@ -12,9 +12,9 @@ import java.util.List;
 
 public class NewsServiceImpl implements Service<NewsDTO> {
     private final NewsMapper newsMapper;
-    private final NewsRepositoryImpl newsRepository;
+    private final NewsRepositoryImplDataSource newsRepository;
 
-    public NewsServiceImpl(NewsMapper newsMapper, NewsRepositoryImpl newsRepository) {
+    public NewsServiceImpl(NewsMapper newsMapper, NewsRepositoryImplDataSource newsRepository) {
         this.newsMapper = newsMapper;
         this.newsRepository = newsRepository;
     }

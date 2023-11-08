@@ -6,10 +6,10 @@ import com.mjc.school.repository.exceptions.NewsNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class NewsRepositoryImpl implements NewsRepository<NewsModel> {
+public class NewsRepositoryImplDataSource implements NewsRepository<NewsModel> {
     private final DataSource dataSource;
 
-    public NewsRepositoryImpl(DataSource dataSource) {
+    public NewsRepositoryImplDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
