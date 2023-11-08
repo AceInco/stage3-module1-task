@@ -1,83 +1,88 @@
 package com.mjc.school.service.impl;
 
-import com.mjc.school.repository.DataSource;
-import com.mjc.school.repository.models.NewsModel;
 import com.mjc.school.repository.exceptions.NewsNotFoundException;
-import com.mjc.school.service.IdGenerator;
-import com.mjc.school.service.NewsDtoMapper;
-import com.mjc.school.service.NewsDtoResponse;
-import com.mjc.school.service.NewsService;
-import com.mjc.school.service.exceptions.AuthorNotFoundException;
-import com.mjc.school.service.exceptions.ContentLengthIsWrongException;
-import com.mjc.school.service.exceptions.TitleLengthIsWrongException;
-import com.mjc.school.service.validators.NewsValidator;
+import com.mjc.school.repository.implementation.NewsModel;
+import com.mjc.school.repository.implementation.NewsRepositoryImpl;
+import com.mjc.school.service.Service;
+import com.mjc.school.service.dto.NewsDTO;
+import com.mjc.school.service.mapper.NewsMapper;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
-public class NewsServiceImpl implements NewsService {
-    private final NewsDtoMapper newsDtoMapper;
-    private final NewsValidator newsValidator;
-    private final DataSource dataSource;
+public class NewsServiceImpl implements Service<NewsDTO> {
+    private final NewsMapper newsMapper;
+    private final NewsRepositoryImpl newsRepository;
 
-    public NewsServiceImpl(NewsDtoMapper newsDtoMapper, NewsValidator newsValidator, DataSource dataSource) {
-        this.newsDtoMapper = newsDtoMapper;
-        this.newsValidator = newsValidator;
-        this.dataSource = dataSource;
+    public NewsServiceImpl(NewsMapper newsMapper, NewsRepositoryImpl newsRepository) {
+        this.newsMapper = newsMapper;
+        this.newsRepository = newsRepository;
+    }
+
+
+    @Override
+    public NewsDTO create(NewsDTO newsDTO) {
+        if (validParam(newsDTO)) {
+            NewsModel newsModel = newsMapper.toModel(newsDTO);
+            newsRepository.create(newsModel);
+        }
+        return newsDTO;
     }
 
     @Override
-    public List<NewsDtoResponse> getAllNews() {
-        return dataSource.readAllNews().stream().map(newsDtoMapper::convertToDto).toList();
-    }
-
-    @Override
-    public NewsDtoResponse getNewsById(Long id) {
+    public NewsDTO readById(Long id) {
         try {
-            return newsDtoMapper.convertToDto(dataSource.readById(id));
+            NewsDTO newsDTO = newsMapper.toDTO(newsRepository.readBy(id));
+            return newsDTO;
         } catch (NewsNotFoundException e) {
-            System.out.println(e.getMessage());
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
     @Override
-    public NewsDtoResponse createNews(NewsDtoResponse newsDtoResponse) {
-        IdGenerator idGenerator = new IdGenerator(dataSource);
-        Long id = idGenerator.getNewsId();
-        LocalDateTime date = LocalDateTime.parse(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        try {
-            newsValidator.validate(newsDtoResponse, dataSource);
-            return newsDtoMapper.convertToDto(dataSource.createNews(new NewsModel(id, newsDtoResponse.getTitle(), newsDtoResponse.getContent(), date, date, newsDtoResponse.getAuthorId())));
-        } catch (TitleLengthIsWrongException | ContentLengthIsWrongException | AuthorNotFoundException e) {
-            System.out.println(e.getMessage());
+    public List<NewsDTO> readAll() {
+        List<NewsModel> newsModelList = newsRepository.readAll();
+        List<NewsDTO> newsDTOList = new ArrayList<>();
+        for (NewsModel newsModel : newsModelList) {
+            newsDTOList.add(newsMapper.toDTO(newsModel));
         }
-        return null;
+        return newsDTOList;
     }
 
     @Override
-    public NewsDtoResponse updateNews(Long id, NewsDtoResponse newsDtoResponse) {
-        try {
-            LocalDateTime createdDate = dataSource.readById(id).getCreatedDate();
-            LocalDateTime updatedDate = LocalDateTime.parse(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            newsValidator.validate(newsDtoResponse, dataSource);
-            return newsDtoMapper.convertToDto(dataSource.updateNews(new NewsModel(id, newsDtoResponse.getTitle(), newsDtoResponse.getContent(), createdDate, updatedDate, newsDtoResponse.getAuthorId())));
-        } catch (TitleLengthIsWrongException | ContentLengthIsWrongException | AuthorNotFoundException | NewsNotFoundException e) {
-            System.out.println(e.getMessage());
+    public NewsDTO update(NewsDTO newsDTO) {
+        if (validParam(newsDTO) && existNews(newsDTO.getId())) {
+            newsRepository.updateNewsById(newsMapper.toModel(newsDTO));
         }
-        return null;
+        return newsDTO;
     }
 
     @Override
-    public boolean deleteNews(Long id){
+    public Boolean delete(Long id) {
+        if (existNews(id)) {
+            return newsRepository.deleteNewsById(id);
+        }
+        return false;
+    }
+
+    public boolean validParam(NewsDTO newsDTO) {
+        int contentLength = newsDTO.getContent().length();
+        int titleLength = newsDTO.getTitle().length();
+        if (!(contentLength >= 5 && contentLength <= 255)) {
+            throw new RuntimeException("Content length should be between 5 and 255");
+        }
+        if (!(titleLength >= 5 && titleLength <= 30)) {
+            throw new RuntimeException("Title length should be between 5 and 30");
+        }
+        return true;
+    }
+
+    public boolean existNews(Long id) {
         try {
-            return dataSource.deleteNewsById(id);
+            NewsModel newsModel = newsRepository.readBy(id);
+            return true;
         } catch (NewsNotFoundException e) {
-            System.out.println(e.getMessage());
-            return false;
+            throw new RuntimeException("News with provided ID: " + id + " not found");
         }
     }
 }
